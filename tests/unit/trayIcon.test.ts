@@ -151,6 +151,7 @@ describe('createTray() icon guard', () => {
     // Verify createFromPath was called
     expect(nativeImage.createFromPath).toHaveBeenCalled();
     // Verify it was called with a path that ends with 'build/icon.png'
-    expect(vi.mocked(nativeImage.createFromPath).mock.calls[0][0]).toMatch(/build\/icon\.png$/);
+    // (tolerate both / and \ separators — Windows checkouts use backslashes)
+    expect(vi.mocked(nativeImage.createFromPath).mock.calls[0][0]).toMatch(/build[\\/]icon\.png$/);
   });
 });

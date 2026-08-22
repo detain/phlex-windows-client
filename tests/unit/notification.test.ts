@@ -8,8 +8,10 @@ import { resolve } from 'path';
 const PROJECT_ROOT = resolve(__dirname, '../..');
 
 describe('notification IPC', () => {
-  const mainSource = readFileSync(resolve(PROJECT_ROOT, 'src/main/index.ts'), 'utf-8');
-  const preloadSource = readFileSync(resolve(PROJECT_ROOT, 'src/preload/index.ts'), 'utf-8');
+  // Normalize line endings: on Windows checkouts the source files carry CRLF,
+  // which breaks the multi-line regexes below (\n vs \r\n).
+  const mainSource = readFileSync(resolve(PROJECT_ROOT, 'src/main/index.ts'), 'utf-8').replace(/\r\n/g, '\n');
+  const preloadSource = readFileSync(resolve(PROJECT_ROOT, 'src/preload/index.ts'), 'utf-8').replace(/\r\n/g, '\n');
 
   it('notification:show handler checks Notification.isSupported()', () => {
     expect(mainSource).toMatch(/Notification\.isSupported\(\)/);

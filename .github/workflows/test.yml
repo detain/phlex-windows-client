@@ -61,10 +61,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '24.x'
         with:
           files: ./coverage/lcov.info
-          fail_ci_if_error: true
-          # master is a protected branch — Codecov refuses anonymous uploads to
-          # it ("Token required because branch is protected"), so pass the
-          # provisioned repository token explicitly.
+          # The coverage threshold (vitest, see vitest.config.mts) already gates
+          # the run — this upload is best-effort. The repo's CODECOV_TOKEN does
+          # not currently authorize uploads to this repository ("Repository not
+          # found"), and failing CI on an external token issue hides real regressions.
+          fail_ci_if_error: false
+          # master is a protected branch — Codecov rejects anonymous uploads to it
+          # ("Token required because branch is protected"), so pass the provisioned
+          # repository token explicitly when one is available.
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage to Codacy
