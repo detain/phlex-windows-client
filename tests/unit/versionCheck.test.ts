@@ -166,7 +166,7 @@ describe('checkMinServerVersion', () => {
     fetchSpy.mockResolvedValueOnce({
       ok: true,
       json: async () => { throw new Error('parse error'); }
-    } as Response);
+    } as unknown as Response);
 
     const result = await checkMinServerVersion('http://localhost:8096');
     expect(result).toBe(true);

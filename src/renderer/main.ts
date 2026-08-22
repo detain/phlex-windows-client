@@ -270,4 +270,10 @@ export async function boot(): Promise<void> {
   }
 }
 
-void boot();
+// Auto-boot only when the mount target exists. Unit tests import this module for
+// buildMenu/buildExtraRoutes; running boot() there would mount into a nonexistent
+// element and leave async work (e.g. the dynamic overlay import) that resolves
+// after the test environment is torn down.
+if (typeof document !== 'undefined' && document.getElementById('phlix-app')) {
+  void boot();
+}

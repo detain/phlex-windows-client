@@ -18,11 +18,36 @@
  */
 
 import { test, expect, chromium } from '@playwright/test';
-import { spawn } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
 
 const ELECTRON_PORT = 9222;
-const ELECTRON_HOST = 'localhost';
+// Electron binds the CDP endpoint to 127.0.0.1 (IPv4) only. Using "localhost"
+// makes Playwright resolve to ::1 first on CI and fail with ECONNREFUSED, so pin
+// both sides to IPv4 explicitly.
+const ELECTRON_HOST = '127.0.0.1';
+
+/**
+ * Kill the Electron process AND its process group.
+ *
+ * The child is spawned with `detached: true`, so it leads its own process group
+ * (xvfb-run → Xvfb → Electron → renderer/gpu children). Killing just the direct
+ * child leaves Electron running orphaned — it keeps the single-instance lock and
+ * holds port 9222, which makes subsequent smoke runs fail to bind. On POSIX,
+ * signal the negative PID (the group); on Windows fall back to the plain kill.
+ */
+function killElectronProcess(proc: ChildProcess): void {
+  if (!proc.pid) return;
+  if (process.platform !== 'win32') {
+    try {
+      process.kill(-proc.pid, 'SIGTERM');
+      return;
+    } catch {
+      // Group kill failed — fall through to a direct kill.
+    }
+  }
+  proc.kill();
+}
 
 test('boot smoke test', async () => {
   // Path to the compiled main process entry
@@ -38,6 +63,7 @@ test('boot smoke test', async () => {
     distMainPath,
     `--disable-gpu`,
     `--no-sandbox`,
+    `--remote-debugging-address=${ELECTRON_HOST}`,
     `--remote-debugging-port=${ELECTRON_PORT}`,
   ];
 
@@ -69,6 +95,13 @@ test('boot smoke test', async () => {
       env: {
         ...process.env,
         NODE_ENV: 'production',
+        // Force production mode so the renderer is served from dist/ via the
+        // app:// protocol instead of dev mode (which opens DevTools and tries to
+        // load the Vite dev server). ELECTRON_DISABLE_GPU avoids GPU-process
+        // crashes under xvfb. DISPLAY is intentionally omitted: xvfb-run sets it
+        // for the Electron child.
+        PHLIX_FORCE_PRODUCTION: '1',
+        ELECTRON_DISABLE_GPU: '1',
       },
     }
   );
@@ -80,7 +113,7 @@ test('boot smoke test', async () => {
   await new Promise((resolve) => setTimeout(resolve, 5_000));
 
   if (electronProcess.exitCode !== null) {
-    electronProcess.kill();
+    killElectronProcess(electronProcess);
     throw new Error(`Electron process exited early with code ${electronProcess.exitCode}`);
   }
 
@@ -92,7 +125,7 @@ test('boot smoke test', async () => {
       { timeout: 30_000 }
     );
   } catch (connectError) {
-    electronProcess.kill();
+    killElectronProcess(electronProcess);
     throw new Error(
       `Failed to connect to Electron via CDP: ${connectError}`
     );
@@ -109,7 +142,7 @@ test('boot smoke test', async () => {
 
   if (!window) {
     await browser.close();
-    electronProcess.kill();
+    killElectronProcess(electronProcess);
     throw new Error('No window found in Electron CDP session');
   }
 
@@ -151,6 +184,6 @@ test('boot smoke test', async () => {
 
   await browser.close();
 
-  // Clean up the Electron process
-  electronProcess.kill();
+  // Clean up the Electron process (and its whole process group)
+  killElectronProcess(electronProcess);
 });

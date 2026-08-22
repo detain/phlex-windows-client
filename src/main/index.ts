@@ -987,6 +987,11 @@ app.on('before-quit', () => {
   isQuitting = true;
   // W4.6: release power blocker on before-quit
   ensurePowerBlocker(false);
+  // W4.9: stop the periodic update check so the process can exit cleanly
+  if (_updateCheckTimer) {
+    clearInterval(_updateCheckTimer);
+    _updateCheckTimer = null;
+  }
 });
 
 // Global exception handler
