@@ -90,7 +90,7 @@ test('boot smoke test', async () => {
     spawnArgs,
     {
       detached: true,
-      stdio: 'ignore',
+      stdio: ['ignore', 'pipe', 'pipe'],
       shell: isWindows,
       env: {
         ...process.env,
@@ -106,28 +106,56 @@ test('boot smoke test', async () => {
     }
   );
 
+  // Capture the child's output so a CI failure shows WHY Electron did not come
+  // up (spawn errors, missing libraries, crashes) instead of a bare ECONNREFUSED.
+  let childOutput = '';
+  electronProcess.stdout?.on('data', (chunk) => { childOutput += chunk.toString(); });
+  electronProcess.stderr?.on('data', (chunk) => { childOutput += chunk.toString(); });
+
   // Prevent the child process from keeping the parent alive
   electronProcess.unref();
 
-  // Give Electron time to start before attempting CDP connection
-  await new Promise((resolve) => setTimeout(resolve, 5_000));
+  // Poll for the CDP endpoint instead of a fixed sleep — slow CI runners can
+  // take longer than 5s to bring the browser process up, and a fixed sleep
+  // fails both when the app is slow AND when it crashed (with no diagnostics).
+  const cdpUrl = `http://${ELECTRON_HOST}:${ELECTRON_PORT}`;
+  let cdpReady = false;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (electronProcess.exitCode !== null) break;
+    try {
+      const res = await fetch(`${cdpUrl}/json/version`);
+      if (res.ok) {
+        cdpReady = true;
+        break;
+      }
+    } catch {
+      // Endpoint not up yet — keep polling.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
 
   if (electronProcess.exitCode !== null) {
     killElectronProcess(electronProcess);
-    throw new Error(`Electron process exited early with code ${electronProcess.exitCode}`);
+    throw new Error(
+      `Electron process exited early with code ${electronProcess.exitCode}\n--- child output ---\n${childOutput}`
+    );
+  }
+
+  if (!cdpReady) {
+    killElectronProcess(electronProcess);
+    throw new Error(
+      `Electron never exposed the CDP endpoint at ${cdpUrl}\n--- child output ---\n${childOutput}`
+    );
   }
 
   // Attach Playwright to the running Electron instance via CDP
   let browser;
   try {
-    browser = await chromium.connectOverCDP(
-      `http://${ELECTRON_HOST}:${ELECTRON_PORT}`,
-      { timeout: 30_000 }
-    );
+    browser = await chromium.connectOverCDP(cdpUrl, { timeout: 30_000 });
   } catch (connectError) {
     killElectronProcess(electronProcess);
     throw new Error(
-      `Failed to connect to Electron via CDP: ${connectError}`
+      `Failed to connect to Electron via CDP: ${connectError}\n--- child output ---\n${childOutput}`
     );
   }
 
