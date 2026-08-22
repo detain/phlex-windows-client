@@ -61,10 +61,12 @@ describe('W5.5: Unbounded list fetch cleanup', () => {
   it('no unbounded fetch or apiClient calls without limit in src/', () => {
     // Mirror grep -rn's `path:line:content` output so the exclusions below
     // match the same strings the original shell pipeline filtered on.
+    // Normalize to forward slashes: on Windows path.relative yields backslashes
+    // and the 'src/main/versionCheck' exclusion would silently miss.
     const hits = walk(SRC)
       .flatMap((file) =>
         matchingLines(file, /fetch\(|apiClient\./)
-          .map((line) => `${path.relative(ROOT, file)}:${line}`)
+          .map((line) => `${path.relative(ROOT, file).split(path.sep).join('/')}:${line}`)
       )
       .filter((entry) => !entry.includes('limit'))
       .filter((entry) => !entry.includes('node_modules'))
