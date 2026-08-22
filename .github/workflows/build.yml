@@ -99,9 +99,13 @@ jobs:
   smoke:
     name: Smoke on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     strategy:
+      # Windows runners need ~10 min just for npm ci (Electron download) — the
+      # previous 10-min timeout cancelled the Windows leg mid-build. Also keep the
+      # two legs independent so a Linux failure cannot cancel the Windows result.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
 

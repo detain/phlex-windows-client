@@ -16,6 +16,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      # A failure on one OS must not cancel the other matrix leg — the two legs
+      # validate independent surfaces (and the default fail-fast:true already
+      # cancelled the Windows results whenever the Ubuntu leg failed).
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         node-version: [24.x]
@@ -58,6 +62,10 @@ jobs:
         with:
           files: ./coverage/lcov.info
           fail_ci_if_error: true
+          # master is a protected branch — Codecov refuses anonymous uploads to
+          # it ("Token required because branch is protected"), so pass the
+          # provisioned repository token explicitly.
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage to Codacy
         uses: codacy/codacy-coverage-reporter-action@v1
@@ -119,9 +127,12 @@ jobs:
   smoke:
     name: Smoke on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     strategy:
+      # Same reasoning as the test job: a Linux smoke failure must not cancel the
+      # Windows leg (which has to download Electron + Playwright first).
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         node-version: [24.x]
