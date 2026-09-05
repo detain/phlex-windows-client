@@ -18,6 +18,10 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   v0.99.1's own pins (`#v0.4.5`/`#v0.1.4`). Churn disclosed: **zero** other
   lock entries moved — the direct `@phlix/contracts#v0.4.3` pin and its
   resolution are untouched (grant boundary), no unrelated package re-resolved.
+  Pre-existing audit reds on this PR cleared in the same in-range, lock-only
+  pattern (S430 precedent): `fast-uri` 3.1.5 → 3.1.7 (high) and
+  `@xmldom/xmldom` 0.8.13 → 0.8.15 (moderate) via `npm update
+  --package-lock-only`; `package.json` untouched.
 
 ### Added
 - (workitem W7.5)
