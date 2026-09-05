@@ -7,6 +7,22 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed — W34 (cs20retag): `@phlix/ui` re-tag v0.98.39 → v0.99.1 — 2026-09-05
+
+- **Combined re-tag wave (this repo's first estate wave).** `package.json`
+  re-tags `@phlix/ui` `github:detain/phlix-ui#v0.98.39` → `#v0.99.1`; the
+  committed lockfile follows via `npm install --package-lock-only` — the
+  `@phlix/ui` block moves to version `0.99.1` resolved at the peeled tag
+  target `11428111` (annotated tag `v0.99.1` peels to that commit), with its
+  nested `@phlix/contracts`/`@phlix/syncplay` declaration strings following
+  v0.99.1's own pins (`#v0.4.5`/`#v0.1.4`). Churn disclosed: **zero** other
+  lock entries moved — the direct `@phlix/contracts#v0.4.3` pin and its
+  resolution are untouched (grant boundary), no unrelated package re-resolved.
+  Pre-existing audit reds on this PR cleared in the same in-range, lock-only
+  pattern (S430 precedent): `fast-uri` 3.1.5 → 3.1.7 (high) and
+  `@xmldom/xmldom` 0.8.13 → 0.8.15 (moderate) via `npm update
+  --package-lock-only`; `package.json` untouched.
+
 ### Added
 - (workitem W7.5)
 
