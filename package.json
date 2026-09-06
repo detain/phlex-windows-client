@@ -70,7 +70,7 @@
     "npmRebuild": false
   },
   "dependencies": {
-    "@phlix/contracts": "github:detain/phlix-contracts#v0.4.3",
+    "@phlix/contracts": "github:detain/phlix-contracts#v0.4.6",
     "@phlix/ui": "github:detain/phlix-ui#v0.99.1",
     "electron-log": "^5.0.0",
     "electron-store": "^8.1.0",

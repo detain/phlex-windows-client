@@ -7,6 +7,24 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed — W39 (S442): `@phlix/contracts` re-pin v0.4.3 → v0.4.6 + doc version prose — 2026-09-06
+
+- **Direct contracts pin advanced to the latest tag.** `package.json` re-pins
+  `@phlix/contracts` `github:detain/phlix-contracts#v0.4.3` → `#v0.4.6`; the committed
+  lockfile follows. The `node_modules/@phlix/contracts` block moves off its drifted
+  resolution (version `0.4.0` at commit `8b355ce`, a v0.4.1-era target that had fallen
+  behind even its own `#v0.4.3` declaration) to version `0.4.6` resolved at the peeled
+  tag `97bcda06`. Churn disclosed: zero other lock entries moved. The nested
+  `@phlix/contracts#v0.4.5` declaration string under `@phlix/ui` is left untouched (ui's
+  own pin, out of scope); the flat tree dedupes ui onto the single hoisted `0.4.6` copy.
+  The sole direct consumption site, `src/renderer/main.ts` (`buildPhlixHeaders`), is
+  unaffected — `headers.ts` is byte-identical v0.4.3→v0.4.6 and `skipLibCheck` isolates
+  the rest of the enlarged type surface.
+- **Doc version prose brought current.** The `README.md` "Pinned to" line now cites
+  `@phlix/ui#v0.99.1` + `@phlix/contracts#v0.4.6` (was doubly-stale `v0.98.39` + `v0.4.1`);
+  the `@phlix/contracts` pin in the `AGENTS.md` / `CLAUDE.md` / `DEVELOPER.md` renderer
+  bullets advanced `v0.4.3` → `v0.4.6` to match `package.json`.
+
 ### Changed — W34 (cs20retag): `@phlix/ui` re-tag v0.98.39 → v0.99.1 — 2026-09-05
 
 - **Combined re-tag wave (this repo's first estate wave).** `package.json`
