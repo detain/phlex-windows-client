@@ -7,6 +7,26 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed — W43 (S450): lockfile self-consistency — `@phlix/syncplay` resolution 0.1.2 → 0.1.4 — 2026-09-08
+
+- **Repaired the nested-request-vs-resolution divergence.** `@phlix/ui` v0.99.1's manifest
+  (verified byte-for-byte against the tag's `package.json` via `git fetch refs/tags/v0.99.1`)
+  requests `github:detain/phlix-syncplay#v0.1.4`, but the committed lock's single hoisted
+  `node_modules/@phlix/syncplay` entry sat at version `0.1.2` resolved at `2fdf70bf` — the
+  v0.1.2 tag commit. `npm install` (warm or cold cache) never self-heals this class of drift,
+  so `npm ci` fidelity was silently broken. The entry now reads version `0.1.4` resolved at
+  `673e3d41`, proven to be the peel of the annotated tag `v0.1.4` (tag object `a8223193`) via
+  `git ls-remote`. Churn disclosed: exactly two lock lines (version + resolved); zero other
+  entries moved — a full re-derivation was rejected for ~1199 lines of unrelated registry
+  drift. The `ui → contracts #v0.4.5 → 0.4.6` hoist stays as S442 ratified it (supersede-higher,
+  single resolution — `npm ls` certifies it "deduped", not "invalid"); it retires when
+  `@phlix/ui` tags a release whose manifest carries `#v0.4.6` (post-S447 `a8349a13`; latest ui
+  tag remains v0.99.1).
+- **Guard added:** `scripts/lockwalk.mjs` (+ `tests/unit/lockwalk.test.mjs`) walks every
+  `@phlix/*` github-tag edge in the lock and fails on request-vs-resolution mismatch,
+  ratified-hoist drift, nested `@phlix/*` copies, or orphan nodes; mutation-proof tests pin
+  the original 0.1.2 defect as RED.
+
 ### Changed — W39 (S442): `@phlix/contracts` re-pin v0.4.3 → v0.4.6 + doc version prose — 2026-09-06
 
 - **Direct contracts pin advanced to the latest tag.** `package.json` re-pins
